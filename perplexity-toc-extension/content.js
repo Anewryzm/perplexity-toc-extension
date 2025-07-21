@@ -10,12 +10,208 @@ let intersectionObserver;
 let isClickNavigating = false;
 let clickNavTimer;
 let sidebarListElement = null;
+let contentObserver = null;
+
+// Configuración de debug
+const DEBUG_MODE = false; // Cambiar a false en producción
+const MAX_ID_RETRIES = 3;
+
+// --- FUNCIONES DE DIAGNÓSTICO Y VALIDACIÓN ---
+
+/**
+ * Función de debug para inspeccionar el estado del TOC
+ */
+function debugTOC() {
+    if (!DEBUG_MODE) return;
+    
+    console.group('🔍 TOC Debug Info');
+    
+    const conversationElements = document.querySelectorAll(
+        '.group\\/query, div[id^="markdown-content"] h1, div[id^="markdown-content"] h2'
+    );
+    
+    const links = document.querySelectorAll('#perplexity-index-sidebar a');
+    
+    console.log('📊 Total elements found:', conversationElements.length);
+    console.log('🔗 Total links created:', links.length);
+    console.log('📍 Current URL:', window.location.href);
+    
+    // Verificar integridad ID por ID
+    let brokenLinks = 0;
+    conversationElements.forEach((element, index) => {
+        const expectedId = `pp-toc-item-${index}`;
+        const actualId = element.id;
+        
+        if (expectedId !== actualId) {
+            console.error(`❌ ID mismatch at index ${index}: expected "${expectedId}", got "${actualId}"`);
+        } else if (DEBUG_MODE) {
+            console.log(`✅ ID correct at index ${index}: "${actualId}"`);
+        }
+        
+        // Verificar si existe el enlace correspondiente
+        const correspondingLink = document.querySelector(`#perplexity-index-sidebar a[href="#${actualId}"]`);
+        if (!correspondingLink) {
+            console.error(`❌ No link found for element with ID: ${actualId}`);
+            brokenLinks++;
+        }
+    });
+    
+    // Verificar enlaces rotos
+    links.forEach((link, index) => {
+        const targetId = link.getAttribute('href').substring(1);
+        const targetElement = document.getElementById(targetId);
+        
+        if (!targetElement) {
+            console.error(`❌ Broken link found at index ${index}: target "${targetId}" not found`);
+            brokenLinks++;
+        }
+    });
+    
+    if (brokenLinks > 0) {
+        console.warn(`⚠️ Found ${brokenLinks} integrity issues in TOC`);
+    } else {
+        console.log('✅ TOC integrity verified - all links working');
+    }
+    
+    console.groupEnd();
+}
+
+/**
+ * Asigna ID con sistema de reintentos
+ */
+function assignIdWithRetry(element, uniqueId, maxRetries = MAX_ID_RETRIES) {
+    let retries = 0;
+    
+    while (retries < maxRetries) {
+        element.id = uniqueId;
+        
+        // Verificar que el ID se asignó correctamente
+        if (element.id === uniqueId) {
+            if (DEBUG_MODE && retries > 0) {
+                console.log(`✅ ID assigned successfully on retry ${retries}: ${uniqueId}`);
+            }
+            return true;
+        }
+        
+        retries++;
+        if (DEBUG_MODE) {
+            console.warn(`⚠️ Retry ${retries}/${maxRetries} for ID assignment: ${uniqueId}`);
+        }
+        
+        // Pequeña pausa entre reintentos
+        if (retries < maxRetries) {
+            // Forzar un reflow para asegurar que el DOM esté actualizado
+            element.offsetHeight;
+        }
+    }
+    
+    console.error(`❌ Failed to assign ID "${uniqueId}" after ${maxRetries} attempts`);
+    return false;
+}
+
+/**
+ * Verifica la integridad del TOC después de la creación
+ */
+function verifyTOCIntegrity() {
+    const links = document.querySelectorAll('#perplexity-index-sidebar a');
+    let brokenLinks = 0;
+    let fixedLinks = 0;
+    
+    links.forEach(link => {
+        const targetId = link.getAttribute('href').substring(1);
+        const targetElement = document.getElementById(targetId);
+        
+        if (!targetElement) {
+            console.warn(`⚠️ Broken link found: ${targetId}`);
+            link.classList.add('toc-broken-link');
+            link.style.opacity = '0.5';
+            // link.style.textDecoration = 'line-through';
+            brokenLinks++;
+        } else {
+            link.classList.remove('toc-broken-link');
+            link.style.opacity = '';
+            link.style.textDecoration = '';
+            fixedLinks++;
+        }
+    });
+    
+    if (DEBUG_MODE) {
+        if (brokenLinks > 0) {
+            console.warn(`⚠️ Integrity check: ${brokenLinks} broken links, ${fixedLinks} working links`);
+        } else {
+            console.log(`✅ Integrity check passed: all ${fixedLinks} links working`);
+        }
+    }
+    
+    return brokenLinks === 0;
+}
+
+/**
+ * Busca elemento por contenido de texto como fallback
+ */
+function findElementByText(searchText) {
+    const elements = document.querySelectorAll(
+        '.group\\/query, div[id^="markdown-content"] h1, div[id^="markdown-content"] h2'
+    );
+    
+    for (let element of elements) {
+        let elementText = element.textContent.trim();
+        
+        // Para prompts, truncar igual que en el TOC
+        if (element.matches('.group\\/query') && elementText.length > 16) {
+            elementText = elementText.substring(0, 16) + "...";
+        }
+        
+        if (elementText === searchText) {
+            return element;
+        }
+    }
+    
+    return null;
+}
 
 /**
  * Función que crea el "esqueleto" del sidebar una sola vez por página.
  */
 function createSidebarShell() {
     if (document.getElementById('perplexity-index-sidebar')) return;
+
+    // Agregar estilos CSS necesarios
+    const styleSheetId = 'perplexity-toc-debug-styles';
+    if (!document.getElementById(styleSheetId)) {
+        const styleSheet = document.createElement("style");
+        styleSheet.id = styleSheetId;
+        styleSheet.innerText = `
+            /* Estilos para elementos con scroll-margin */
+            .group\\/query,
+            div[id^="markdown-content"] h1,
+            div[id^="markdown-content"] h2 {
+                scroll-margin-top: 100px !important;
+            }
+            
+            /* Debug: highlighting para elementos con IDs TOC */
+            ${DEBUG_MODE ? `
+            [id^="pp-toc-item-"] {
+                position: relative;
+            }
+            
+            [id^="pp-toc-item-"]:before {
+                content: "TOC:" attr(id);
+                position: absolute;
+                top: -20px;
+                left: 0;
+                font-size: 10px;
+                background: #fbbf24;
+                color: #000;
+                padding: 2px 4px;
+                border-radius: 2px;
+                z-index: 1000;
+                opacity: 0.7;
+            }
+            ` : ''}
+        `;
+        document.head.appendChild(styleSheet);
+    }
 
     const sidebar = document.createElement('aside');
     sidebar.id = 'perplexity-index-sidebar';
@@ -37,15 +233,49 @@ function createSidebarShell() {
         e.preventDefault();
         
         const targetId = link.getAttribute('href').substring(1);
-        const element = document.getElementById(targetId);
+        let element = document.getElementById(targetId);
 
         if (element) {
+            if (DEBUG_MODE) {
+                console.log(`🎯 Navigating to element with ID: ${targetId}`);
+            }
+            
             isClickNavigating = true;
             document.querySelectorAll('#perplexity-index-sidebar a').forEach(l => l.classList.remove('toc-active-link'));
             link.classList.add('toc-active-link');
             element.scrollIntoView({ behavior: 'smooth' });
             clearTimeout(clickNavTimer);
             clickNavTimer = setTimeout(() => { isClickNavigating = false; }, 1000);
+        } else {
+            // FALLBACK: Intentar encontrar el elemento por texto
+            console.warn(`⚠️ Element with ID "${targetId}" not found, trying fallback...`);
+            
+            const fallbackElement = findElementByText(link.textContent);
+            if (fallbackElement) {
+                console.log(`✅ Fallback successful, found element by text: "${link.textContent}"`);
+                
+                // Asignar el ID correcto al elemento encontrado
+                fallbackElement.id = targetId;
+                
+                isClickNavigating = true;
+                document.querySelectorAll('#perplexity-index-sidebar a').forEach(l => l.classList.remove('toc-active-link'));
+                link.classList.add('toc-active-link');
+                fallbackElement.scrollIntoView({ behavior: 'smooth' });
+                clearTimeout(clickNavTimer);
+                clickNavTimer = setTimeout(() => { isClickNavigating = false; }, 1000);
+            } else {
+                console.error(`❌ Cannot navigate to: ${targetId}. Element not found even with fallback.`);
+                
+                // Marcar el enlace como roto
+                link.classList.add('toc-broken-link');
+                link.style.opacity = '0.5';
+                
+                // Intentar regenerar el TOC
+                setTimeout(() => {
+                    console.log('🔄 Attempting to regenerate TOC due to navigation failure...');
+                    updateSidebarContent();
+                }, 100);
+            }
         }
     });
 
@@ -59,7 +289,14 @@ function createSidebarShell() {
  * Actualiza el CONTENIDO del sidebar, garantizando la vinculación correcta de los IDs.
  */
 function updateSidebarContent() {
-    if (!sidebarListElement) return;
+    if (!sidebarListElement) {
+        console.error('❌ Sidebar list element not found');
+        return;
+    }
+
+    if (DEBUG_MODE) {
+        console.log('🔄 Starting sidebar content update...');
+    }
 
     // Desconectar observer anterior si existe
     if (intersectionObserver) intersectionObserver.disconnect();
@@ -67,20 +304,74 @@ function updateSidebarContent() {
     // Limpiar contenido actual
     sidebarListElement.innerHTML = '';
 
-    // Buscar todos los elementos de conversación
-    const conversationElements = document.querySelectorAll(
+    // Buscar todos los elementos de conversación con filtrado mejorado
+    const allElements = document.querySelectorAll(
         '.group\\/query, div[id^="markdown-content"] h1, div[id^="markdown-content"] h2'
     );
     
+    // Filtrar elementos válidos
+    const conversationElements = Array.from(allElements).filter(element => {
+        // Verificar que el elemento sea visible y tenga contenido
+        return element.offsetParent !== null && // Elemento visible
+               element.textContent.trim().length > 0 && // Tiene contenido
+               !element.closest('[style*="display: none"]'); // No está en contenedor oculto
+    });
+    
+    if (DEBUG_MODE) {
+        console.log(`📊 Found ${allElements.length} total elements, ${conversationElements.length} valid elements`);
+    }
+    
     lastItemCount = conversationElements.length;
+
+    if (conversationElements.length === 0) {
+        console.warn('⚠️ No valid conversation elements found');
+        return;
+    }
+
+    let successfulBindings = 0;
+    let failedBindings = 0;
 
     // Recorremos los elementos del hilo usando un bucle con índice.
     conversationElements.forEach((element, index) => {
-        // *** LA CLAVE DE LA SOLUCIÓN: ID DETERMINISTA ***
-        // Generamos un ID único y predecible basado en la posición del elemento en el hilo.
-        // Se lo asignamos al elemento del contenido en cada actualización para garantizar que esté presente.
+        // *** ASIGNACIÓN DE ID CON VALIDACIÓN ***
         const uniqueId = `pp-toc-item-${index}`;
-        element.id = uniqueId;
+        
+        // Verificar si ya tiene un ID válido
+        if (element.id && element.id.startsWith('pp-toc-item-')) {
+            if (DEBUG_MODE) {
+                console.log(`🔄 Element already has valid ID: ${element.id}, keeping it`);
+            }
+            // Mantener el ID existente si es válido, pero asegurar consistencia
+            if (element.id !== uniqueId) {
+                // Solo reasignar si es necesario para mantener orden
+                if (!assignIdWithRetry(element, uniqueId)) {
+                    console.error(`❌ Failed to reassign ID for consistency: ${uniqueId}`);
+                    failedBindings++;
+                    return; // Saltar este elemento si no se puede asignar ID
+                }
+            }
+        } else {
+            // Asignar nuevo ID con reintentos
+            if (!assignIdWithRetry(element, uniqueId)) {
+                console.error(`❌ Skipping element at index ${index} due to ID assignment failure`);
+                failedBindings++;
+                return; // Saltar este elemento si no se puede asignar ID
+            }
+        }
+
+        // VALIDACIÓN POST-ASIGNACIÓN
+        const verificationElement = document.getElementById(uniqueId);
+        if (!verificationElement) {
+            console.error(`❌ Post-assignment verification failed for ID: ${uniqueId}`);
+            failedBindings++;
+            return;
+        }
+
+        if (verificationElement !== element) {
+            console.error(`❌ ID conflict detected: ${uniqueId} points to different element`);
+            failedBindings++;
+            return;
+        }
 
         // Determinamos el tipo de elemento para el estilo y el texto.
         const isPrompt = element.matches('.group\\/query');
@@ -89,6 +380,12 @@ function updateSidebarContent() {
 
         if (isPrompt && textContent.length > 16) {
             textContent = textContent.substring(0, 16) + "...";
+        }
+
+        // Validar que tenemos contenido para mostrar
+        if (!textContent) {
+            console.warn(`⚠️ Empty text content for element with ID: ${uniqueId}`);
+            textContent = `[Empty ${type}]`;
         }
 
         // Creamos el elemento del índice (<li> y <a>).
@@ -100,6 +397,12 @@ function updateSidebarContent() {
         a.textContent = textContent;
         a.className = 'perplexity-toc-link';
         
+        // Agregar atributo data para debugging
+        if (DEBUG_MODE) {
+            a.setAttribute('data-target-id', uniqueId);
+            a.setAttribute('data-element-type', type);
+        }
+        
         // Aplicar clases específicas según el tipo
         if (type === 'prompt') {
             a.classList.add('perplexity-toc-prompt');
@@ -110,10 +413,37 @@ function updateSidebarContent() {
         
         li.appendChild(a);
         sidebarListElement.appendChild(li);
+        
+        successfulBindings++;
+        
+        if (DEBUG_MODE) {
+            console.log(`✅ Successfully bound element ${index}: "${textContent}" -> #${uniqueId}`);
+        }
     });
 
     // Configurar el Intersection Observer para tracking de scroll
     setupIntersectionObserver(conversationElements);
+    
+    // Verificar integridad después de la creación
+    setTimeout(() => {
+        const integrityPassed = verifyTOCIntegrity();
+        
+        if (DEBUG_MODE) {
+            console.log(`📋 TOC Update Summary:`);
+            console.log(`  - Successful bindings: ${successfulBindings}`);
+            console.log(`  - Failed bindings: ${failedBindings}`);
+            console.log(`  - Integrity check: ${integrityPassed ? 'PASSED' : 'FAILED'}`);
+            
+            // Ejecutar debug detallado
+            debugTOC();
+        }
+        
+        // Si hay problemas de integridad, intentar una regeneración
+        if (!integrityPassed && failedBindings === 0) {
+            console.warn('⚠️ Integrity issues detected despite successful bindings, scheduling retry...');
+            setTimeout(() => updateSidebarContent(), 500);
+        }
+    }, 100);
 }
 
 /**
@@ -158,6 +488,92 @@ function setupIntersectionObserver(elementsToWatch) {
 }
 
 /**
+ * Configura observer para elementos dinámicos
+ */
+function setupContentObserver() {
+    // Limpiar observer anterior si existe
+    if (contentObserver) {
+        contentObserver.disconnect();
+    }
+    
+    contentObserver = new MutationObserver((mutations) => {
+        let shouldUpdate = false;
+        let elementsRemoved = false;
+        
+        mutations.forEach(mutation => {
+            // Detectar elementos removidos con IDs TOC
+            mutation.removedNodes.forEach(node => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    if (node.id && node.id.startsWith('pp-toc-item-')) {
+                        if (DEBUG_MODE) {
+                            console.log(`🗑️ Element with TOC ID removed: ${node.id}`);
+                        }
+                        elementsRemoved = true;
+                        shouldUpdate = true;
+                    }
+                    
+                    // Buscar elementos con IDs TOC dentro del nodo removido
+                    const tocElements = node.querySelectorAll ? node.querySelectorAll('[id^="pp-toc-item-"]') : [];
+                    if (tocElements.length > 0) {
+                        if (DEBUG_MODE) {
+                            console.log(`🗑️ ${tocElements.length} TOC elements removed within parent node`);
+                        }
+                        elementsRemoved = true;
+                        shouldUpdate = true;
+                    }
+                }
+            });
+            
+            // Detectar nuevos elementos de conversación añadidos
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const isConversationElement = node.matches && node.matches('.group\\/query, div[id^="markdown-content"] h1, div[id^="markdown-content"] h2');
+                    const containsConversationElements = node.querySelectorAll ? node.querySelectorAll('.group\\/query, div[id^="markdown-content"] h1, div[id^="markdown-content"] h2').length > 0 : false;
+                    
+                    if (isConversationElement || containsConversationElements) {
+                        if (DEBUG_MODE) {
+                            console.log('➕ New conversation elements detected');
+                        }
+                        shouldUpdate = true;
+                    }
+                }
+            });
+        });
+        
+        if (shouldUpdate) {
+            if (DEBUG_MODE) {
+                console.log(`🔄 Content change detected, scheduling TOC update (elements removed: ${elementsRemoved})`);
+            }
+            
+            // Debounce para evitar actualizaciones excesivas
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                if (elementsRemoved) {
+                    // Si se removieron elementos, hacer una regeneración completa
+                    console.log('🔄 Performing full TOC regeneration due to element removal');
+                    handlePageUpdate();
+                } else {
+                    // Solo actualizar contenido
+                    updateSidebarContent();
+                }
+            }, 200);
+        }
+    });
+    
+    // Observar cambios en el contenido principal
+    const mainContent = document.querySelector('main') || document.body;
+    contentObserver.observe(mainContent, {
+        childList: true,
+        subtree: true,
+        attributes: false
+    });
+    
+    if (DEBUG_MODE) {
+        console.log('👁️ Content observer setup complete');
+    }
+}
+
+/**
  * Maneja las actualizaciones de página y decide si mostrar/ocultar el sidebar
  */
 function handlePageUpdate() {
@@ -166,8 +582,15 @@ function handlePageUpdate() {
         '.group\\/query, div[id^="markdown-content"] h1, div[id^="markdown-content"] h2'
     ).length;
 
+    if (DEBUG_MODE) {
+        console.log(`🔄 Page update check - URL: ${currentUrl}, Items: ${currentItemCount}`);
+    }
+
     // Evitar procesamiento innecesario si no hay cambios
     if (currentUrl === lastProcessedUrl && currentItemCount === lastItemCount) {
+        if (DEBUG_MODE) {
+            console.log('⏭️ No changes detected, skipping update');
+        }
         return;
     }
 
@@ -176,15 +599,32 @@ function handlePageUpdate() {
     
     // Determinar si debe mostrar el sidebar
     // Solo en páginas de búsqueda con contenido
-    const shouldShowSidebar = currentPath.startsWith('/search/') && currentPath.length > 8;
+    const shouldShowSidebar = currentPath.startsWith('/search/') && currentPath.length > 8 && currentItemCount > 0;
+
+    if (DEBUG_MODE) {
+        console.log(`📍 Path: ${currentPath}, Should show sidebar: ${shouldShowSidebar}`);
+    }
 
     if (shouldShowSidebar) {
-        createSidebarShell();
-        updateSidebarContent();
+        try {
+            createSidebarShell();
+            updateSidebarContent();
+            setupContentObserver();
+            
+            if (DEBUG_MODE) {
+                console.log('✅ Sidebar successfully created and configured');
+            }
+        } catch (error) {
+            console.error('❌ Error during sidebar setup:', error);
+        }
     } else {
         removeSidebarIfExists();
         lastItemCount = 0;
         sidebarListElement = null;
+        
+        if (DEBUG_MODE) {
+            console.log('🗑️ Sidebar removed - not needed for current page');
+        }
     }
 }
 
@@ -192,34 +632,129 @@ function handlePageUpdate() {
  * Remueve el sidebar y limpia recursos
  */
 function removeSidebarIfExists() {
+    if (DEBUG_MODE) {
+        console.log('🧹 Cleaning up TOC resources...');
+    }
+    
     const existingSidebar = document.getElementById('perplexity-index-sidebar');
     if (existingSidebar) {
         existingSidebar.remove();
+        if (DEBUG_MODE) {
+            console.log('🗑️ Sidebar element removed');
+        }
     }
+    
     if (intersectionObserver) {
         intersectionObserver.disconnect();
+        intersectionObserver = null;
+        if (DEBUG_MODE) {
+            console.log('👁️ Intersection observer disconnected');
+        }
+    }
+    
+    if (contentObserver) {
+        contentObserver.disconnect();
+        contentObserver = null;
+        if (DEBUG_MODE) {
+            console.log('👁️ Content observer disconnected');
+        }
+    }
+    
+    // Limpiar elementos con IDs TOC si es necesario (cleanup preventivo)
+    const tocElements = document.querySelectorAll('[id^="pp-toc-item-"]');
+    if (tocElements.length > 0 && DEBUG_MODE) {
+        console.log(`🧹 Found ${tocElements.length} elements with TOC IDs remaining`);
+        // No los removemos aquí porque podrían ser necesarios para otras funcionalidades
+    }
+    
+    if (DEBUG_MODE) {
+        console.log('✅ TOC cleanup completed');
     }
 }
 
 // --- MECANISMO DE ACTIVACIÓN ---
-// Usar debounce para evitar procesamiento excesivo
+
 let debounceTimer;
-const observer = new MutationObserver(() => {
+
+// Observer principal para cambios generales en la página
+const mainObserver = new MutationObserver(() => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(handlePageUpdate, 100);
 });
 
-// Observar cambios en el DOM
-observer.observe(document.body, { 
-    childList: true, 
-    subtree: true, 
-    attributes: false 
-});
+/**
+ * Inicializar el sistema TOC
+ */
+function initializeTOC() {
+    if (DEBUG_MODE) {
+        console.log('🚀 Initializing Perplexity TOC Extension...');
+    }
+    
+    // Observar cambios generales en el DOM
+    mainObserver.observe(document.body, { 
+        childList: true, 
+        subtree: true, 
+        attributes: false 
+    });
+    
+    // Ejecutar inmediatamente al cargar
+    handlePageUpdate();
+    
+    // Manejar navegación SPA (Single Page Application)
+    window.addEventListener('popstate', () => {
+        if (DEBUG_MODE) {
+            console.log('🔄 Navigation detected (popstate)');
+        }
+        handlePageUpdate();
+    });
+    
+    window.addEventListener('pushstate', () => {
+        if (DEBUG_MODE) {
+            console.log('🔄 Navigation detected (pushstate)');
+        }
+        handlePageUpdate();
+    });
+    
+    window.addEventListener('replacestate', () => {
+        if (DEBUG_MODE) {
+            console.log('🔄 Navigation detected (replacestate)');
+        }
+        handlePageUpdate();
+    });
+    
+    // Cleanup al descargar la página
+    window.addEventListener('beforeunload', () => {
+        if (DEBUG_MODE) {
+            console.log('🔄 Page unloading, cleaning up TOC...');
+        }
+        removeSidebarIfExists();
+        mainObserver.disconnect();
+    });
+    
+    if (DEBUG_MODE) {
+        console.log('✅ TOC Extension initialized successfully');
+        
+        // Agregar función de debug global para debugging manual
+        window.debugPerplexityTOC = () => {
+            console.log('🔧 Manual TOC Debug triggered');
+            debugTOC();
+            verifyTOCIntegrity();
+        };
+        
+        window.regeneratePerplexityTOC = () => {
+            console.log('🔄 Manual TOC regeneration triggered');
+            updateSidebarContent();
+        };
+        
+        console.log('🔧 Debug functions available:');
+        console.log('  - window.debugPerplexityTOC() - Run diagnostic');
+        console.log('  - window.regeneratePerplexityTOC() - Force regeneration');
+    }
+}
 
-// Ejecutar inmediatamente al cargar
-handlePageUpdate();
-
-// Manejar navegación SPA (Single Page Application)
-window.addEventListener('popstate', handlePageUpdate);
-window.addEventListener('pushstate', handlePageUpdate);
-window.addEventListener('replacestate', handlePageUpdate);
+// Esperar a que el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeTOC);
+} else {
+    initializeTOC();
+}
