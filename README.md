@@ -7,6 +7,9 @@
 
 A Chrome extension that adds an **interactive table of contents** to Perplexity.ai search pages. It enhances navigation through long conversations and improves user experience by providing a visual and functional content index.
 
+<img width="1733" height="1147" alt="perplexity-toc-extension-ss" src="https://github.com/user-attachments/assets/063f57aa-ee9f-4539-8afe-405e246f9e27" />
+
+
 ## ✨ Features
 
 - ✅ **Automatic TOC generation** from page content
