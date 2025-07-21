@@ -192,9 +192,7 @@ function createSidebarShell() {
             
             /* Estilos para el botón toggle */
             .perplexity-toc-toggle {
-                position: absolute;
-                top: 10px;
-                right: 10px;
+                position: relative;
                 width: 24px;
                 height: 24px;
                 background: transparent;
@@ -206,6 +204,7 @@ function createSidebarShell() {
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                flex-shrink: 0;
             }
             
             .perplexity-toc-toggle:hover {
@@ -213,8 +212,8 @@ function createSidebarShell() {
             }
             
             .perplexity-toc-toggle svg {
-                width: 16px;
-                height: 16px;
+                width: 14px;
+                height: 14px;
                 fill: #666;
             }
             
@@ -234,7 +233,7 @@ function createSidebarShell() {
                 display: none;
                 position: fixed;
                 top: 80px;
-                right: 20px;
+                right: 30px;
                 width: 48px;
                 height: 48px;
                 background-color: #ffffff;
@@ -254,8 +253,8 @@ function createSidebarShell() {
             }
             
             .perplexity-toc-floating-btn svg {
-                width: 24px;
-                height: 24px;
+                width: 20px;
+                height: 20px;
                 fill: #21808d;
             }
             
@@ -326,7 +325,7 @@ function createSidebarShell() {
     
     // Header con título y botón toggle
     const sidebarHeader = document.createElement('div');
-    sidebarHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;';
+    sidebarHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;';
     
     const sidebarTitle = document.createElement('h3');
     sidebarTitle.className = 'perplexity-toc-title';
@@ -340,7 +339,7 @@ function createSidebarShell() {
     toggleBtn.className = 'perplexity-toc-toggle';
     toggleBtn.innerHTML = `
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
     `;
     toggleBtn.title = 'Ocultar índice';
