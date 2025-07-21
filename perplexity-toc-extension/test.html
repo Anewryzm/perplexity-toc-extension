@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Perplexity TOC Extension</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #21808d;
+        }
+        .installation-step {
+            background: #e8f4fd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ffeaa7;
+        }
+        .success {
+            background: #d1edff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #74b9ff;
+        }
+        code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test y Guía de Instalación - Perplexity TOC Extension</h1>
+    
+    <p><strong>Autor:</strong> Enrique Cardoza<br>
+    <strong>Versión:</strong> 1.0.0</p>
+
+    <div class="test-section">
+        <h2>📋 Checklist de Archivos</h2>
+        <p>Verifica que tienes todos estos archivos en tu carpeta <code>perplexity-toc-extension/</code>:</p>
+        
+        <ul>
+            <li>✅ <code>manifest.json</code> - Configuración de la extensión</li>
+            <li>✅ <code>content.js</code> - Script principal</li>
+            <li>✅ <code>styles.css</code> - Estilos del sidebar</li>
+            <li>⚠️ <code>icons/icon16.png</code> - Icono 16x16 (necesitas crearlo)</li>
+            <li>⚠️ <code>icons/icon48.png</code> - Icono 48x48 (necesitas crearlo)</li>
+            <li>⚠️ <code>icons/icon128.png</code> - Icono 128x128 (necesitas crearlo)</li>
+            <li>📖 <code>README.md</code> - Documentación</li>
+        </ul>
+    </div>
+
+    <div class="warning">
+        <h3>⚠️ Paso Importante: Crear los Iconos</h3>
+        <p>Necesitas crear 3 archivos PNG en la carpeta <code>icons/</code>:</p>
+        <ol>
+            <li><strong>icon16.png</strong> (16x16 píxeles)</li>
+            <li><strong>icon48.png</strong> (48x48 píxeles)</li>
+            <li><strong>icon128.png</strong> (128x128 píxeles)</li>
+        </ol>
+        <p>Puedes usar herramientas online como <a href="https://favicon.io/" target="_blank">favicon.io</a> o <a href="https://www.canva.com" target="_blank">Canva</a> para crearlos rápidamente.</p>
+    </div>
+
+    <div class="installation-step">
+        <h2>🚀 Pasos de Instalación</h2>
+        
+        <h3>1. Preparar la Extensión</h3>
+        <div class="code-block">
+# En tu terminal, verifica la estructura:
+ls -la perplexity-toc-extension/
+
+# Deberías ver:
+# manifest.json
+# content.js  
+# styles.css
+# icons/ (carpeta)
+# README.md
+        </div>
+
+        <h3>2. Abrir Chrome Extensions</h3>
+        <ul>
+            <li>Abre Google Chrome</li>
+            <li>Navega a <code>chrome://extensions</code></li>
+            <li>Activa el <strong>"Modo desarrollador"</strong> (toggle arriba a la derecha)</li>
+        </ul>
+
+        <h3>3. Cargar la Extensión</h3>
+        <ul>
+            <li>Haz clic en <strong>"Cargar extensión sin empaquetar"</strong></li>
+            <li>Selecciona la carpeta <code>perplexity-toc-extension</code></li>
+            <li>La extensión debería aparecer en la lista</li>
+        </ul>
+    </div>
+
+    <div class="success">
+        <h2>✅ Pruebas de Funcionamiento</h2>
+        
+        <h3>Prueba 1: Verificar Instalación</h3>
+        <ol>
+            <li>Ve a <code>chrome://extensions</code></li>
+            <li>Busca "Perplexity TOC - Table of Contents"</li>
+            <li>Verifica que esté <strong>habilitada</strong></li>
+            <li>No debe mostrar errores en rojo</li>
+        </ol>
+
+        <h3>Prueba 2: Funcionalidad Básica</h3>
+        <ol>
+            <li>Ve a <a href="https://www.perplexity.ai" target="_blank">perplexity.ai</a></li>
+            <li>Haz una búsqueda que genere una conversación larga</li>
+            <li>Verifica que aparezca el sidebar en la derecha</li>
+            <li>Prueba hacer clic en los enlaces del índice</li>
+            <li>Verifica que el scroll funciona suavemente</li>
+        </ol>
+
+        <h3>Prueba 3: Navegación</h3>
+        <ol>
+            <li>Navega manualmente por la página (scroll)</li>
+            <li>Verifica que se resalta el enlace activo</li>
+            <li>Cambia a otra página de Perplexity</li>
+            <li>Verifica que el sidebar desaparece/aparece según corresponda</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🐛 Solución de Problemas</h2>
+        
+        <h3>Error: "No se pudo cargar la extensión"</h3>
+        <ul>
+            <li>Verifica que el archivo <code>manifest.json</code> esté presente</li>
+            <li>Revisa que la sintaxis JSON sea correcta</li>
+            <li>Asegúrate que los archivos referenciados existan</li>
+        </ul>
+
+        <h3>El sidebar no aparece</h3>
+        <ul>
+            <li>Verifica que estés en una URL que empiece con <code>/search/</code></li>
+            <li>Abre DevTools (F12) y busca errores en la consola</li>
+            <li>Recarga la página</li>
+        </ul>
+
+        <h3>Los iconos no se ven</h3>
+        <ul>
+            <li>Crea los archivos PNG en <code>icons/</code></li>
+            <li>Verifica que tengan los nombres exactos: <code>icon16.png</code>, <code>icon48.png</code>, <code>icon128.png</code></li>
+            <li>Recarga la extensión en <code>chrome://extensions</code></li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Debug y Desarrollo</h2>
+        
+        <h3>Ver logs de la extensión:</h3>
+        <ol>
+            <li>Ve a <code>chrome://extensions</code></li>
+            <li>Busca tu extensión</li>
+            <li>Haz clic en <strong>"Detalles"</strong></li>
+            <li>Haz clic en <strong>"Inspeccionar vistas"</strong> si aparece</li>
+        </ol>
+
+        <h3>Debug del content script:</h3>
+        <ol>
+            <li>Ve a una página de Perplexity</li>
+            <li>Abre DevTools (F12)</li>
+            <li>Ve a la pestaña <strong>"Console"</strong></li>
+            <li>Busca mensajes de error o warnings</li>
+        </ol>
+
+        <h3>Recargar después de cambios:</h3>
+        <ol>
+            <li>Haz cambios en <code>content.js</code> o <code>styles.css</code></li>
+            <li>Ve a <code>chrome://extensions</code></li>
+            <li>Haz clic en el <strong>ícono de recarga</strong> de tu extensión</li>
+            <li>Recarga la página de Perplexity</li>
+        </ol>
+    </div>
+
+    <div class="success">
+        <h2>🎉 ¡Todo Listo!</h2>
+        <p>Si has seguido todos los pasos, tu extensión debería estar funcionando perfectamente. 
+        ¡Disfruta de una navegación mejorada en Perplexity.ai!</p>
+        
+        <p><strong>Desarrollado por:</strong> Enrique Cardoza</p>
+    </div>
+
+</body>
+</html>

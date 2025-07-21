@@ -1,0 +1,248 @@
+/*
+ * Perplexity TOC Extension - Styles
+ * Author: Enrique Cardoza
+ * Version: 1.0.0
+ */
+
+/* ===== ESTILOS PARA ELEMENTOS OBJETIVO ===== */
+/* Agregar margen superior para scroll suave */
+.group\/query,
+div[id^="markdown-content"] h1,
+div[id^="markdown-content"] h2 {
+    scroll-margin-top: 100px !important;
+}
+
+/* ===== SIDEBAR PRINCIPAL ===== */
+#perplexity-index-sidebar {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    width: 280px;
+    z-index: 9999;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Scrollbar personalizada para el sidebar */
+#perplexity-index-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+#perplexity-index-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#perplexity-index-sidebar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#perplexity-index-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* ===== CONTENEDOR INTERNO ===== */
+.perplexity-toc-inner {
+    background-color: #ffffff;
+    border: 1px solid #e0e2e5;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+}
+
+/* ===== TÍTULO DEL SIDEBAR ===== */
+.perplexity-toc-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    border-bottom: 1px solid #d0d2d5;
+    padding-bottom: 10px;
+}
+
+/* ===== LISTA DE CONTENIDOS ===== */
+.perplexity-toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.perplexity-toc-list li {
+    margin-bottom: 2px;
+}
+
+/* ===== ENLACES DE LA TABLA DE CONTENIDOS ===== */
+.perplexity-toc-link {
+    text-decoration: none;
+    color: #21808d;
+    display: block;
+    padding: 6px 8px;
+    border-radius: 5px;
+    transition: background-color 0.2s, color 0.2s;
+    line-height: 1.4;
+    border: 1px solid transparent;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.perplexity-toc-link:hover {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+}
+
+/* ===== ESTILOS ESPECÍFICOS PARA PROMPTS ===== */
+.perplexity-toc-prompt {
+    font-weight: 500 !important;
+    color: #333 !important;
+}
+
+.perplexity-toc-prompt:hover {
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.perplexity-toc-prompt-item {
+    margin-top: 10px;
+    margin-bottom: 8px !important;
+}
+
+.perplexity-toc-prompt-item:first-child {
+    margin-top: 0;
+}
+
+/* ===== ESTILOS PARA SUBTÍTULOS DE RESPUESTA ===== */
+.perplexity-toc-subtitle {
+    padding-left: 20px;
+}
+
+/* ===== ENLACE ACTIVO ===== */
+.toc-active-link {
+    background-color: #1d717c1a !important;
+    color: #1d717c !important;
+    font-weight: 600;
+    border-color: #1d717c !important;
+    box-shadow: 0 2px 4px rgba(29, 113, 124, 0.1);
+}
+
+.toc-active-link:hover {
+    background-color: #1d717c2a !important;
+}
+
+/* ===== ESTADOS DE CARGA ===== */
+.perplexity-toc-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.perplexity-toc-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #21808d;
+    border-radius: 50%;
+    animation: perplexity-toc-spin 1s linear infinite;
+}
+
+@keyframes perplexity-toc-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 1200px) {
+    #perplexity-index-sidebar {
+        width: 250px;
+        right: 15px;
+    }
+}
+
+@media (max-width: 900px) {
+    #perplexity-index-sidebar {
+        display: none;
+    }
+}
+
+/* ===== MODO OSCURO ===== */
+@media (prefers-color-scheme: dark) {
+    /* Scrollbar para modo oscuro */
+    #perplexity-index-sidebar::-webkit-scrollbar-track {
+        background: #333;
+    }
+    
+    #perplexity-index-sidebar::-webkit-scrollbar-thumb {
+        background: #666;
+    }
+    
+    #perplexity-index-sidebar::-webkit-scrollbar-thumb:hover {
+        background: #888;
+    }
+    
+    /* Contenedor interno - color de fondo ligeramente más claro que Perplexity */
+    .perplexity-toc-inner {
+        background-color: #191a1a !important;
+        border-color: #444 !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    }
+    
+    /* Título - color similar al texto de contenido pero un poco más oscuro */
+    .perplexity-toc-title {
+        color: #d8d5d6 !important;
+        border-bottom-color: #444 !important;
+    }
+    
+    /* Enlaces - diferente color en modo oscuro */
+    .perplexity-toc-link {
+        color: #999 !important;
+    }
+    
+    .perplexity-toc-link:hover {
+        background-color: #3a3a3a !important;
+        border-color: #555 !important;
+    }
+    
+    /* Prompts - texto similar al contenido pero más oscuro */
+    .perplexity-toc-prompt {
+        color: #d8d5d6 !important;
+        background-color: #3a3a3a !important;
+    }
+    
+    .perplexity-toc-prompt:hover {
+        background-color: #4a4a4a !important;
+        color: #eae7e8 !important;
+    }
+    
+    /* Subtítulos */
+    .perplexity-toc-subtitle::before {
+        color: #666 !important;
+    }
+    
+    .perplexity-toc-subtitle .perplexity-toc-link {
+        color: #999 !important;
+    }
+    
+    .perplexity-toc-subtitle .perplexity-toc-link:hover {
+        color: #21808d !important;
+    }
+    
+    /* Enlace activo - mantener consistencia con modo claro */
+    .perplexity-toc-link.toc-active-link {
+        background-color: #1d717c1a !important;
+        color: #1d717c !important;
+        border-color: #1d717c !important;
+    }
+    
+    .toc-active-link:hover {
+        background-color: #1d717c2a !important;
+        color: #21808d !important
+    }
+}

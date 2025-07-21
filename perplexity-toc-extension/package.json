@@ -1,0 +1,35 @@
+{
+  "name": "perplexity-toc-extension",
+  "version": "1.0.0",
+  "description": "Agrega una tabla de contenidos interactiva en las páginas de búsqueda de Perplexity.ai",
+  "author": "Enrique Cardoza",
+  "license": "MIT",
+  "keywords": [
+    "chrome-extension",
+    "perplexity",
+    "table-of-contents",
+    "navigation",
+    "productivity"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anewryzm/perplexity-toc-extension.git"
+  },
+  "scripts": {
+    "build": "echo 'Building extension...' && npm run validate",
+    "validate": "node scripts/validate.js",
+    "package": "node scripts/package.js",
+    "test": "echo 'Opening test file...' && open test.html"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "manifest.json",
+    "content.js",
+    "styles.css",
+    "icons/",
+    "README.md"
+  ]
+}
