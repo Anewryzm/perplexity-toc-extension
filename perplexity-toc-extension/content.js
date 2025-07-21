@@ -177,117 +177,13 @@ function findElementByText(searchText) {
 function createSidebarShell() {
     if (document.getElementById('perplexity-index-sidebar')) return;
 
-    // Agregar estilos CSS necesarios
+    // Agregar estilos de debug dinámicamente si está habilitado
     const styleSheetId = 'perplexity-toc-debug-styles';
-    if (!document.getElementById(styleSheetId)) {
+    if (DEBUG_MODE && !document.getElementById(styleSheetId)) {
         const styleSheet = document.createElement("style");
         styleSheet.id = styleSheetId;
         styleSheet.innerText = `
-            /* Estilos para elementos con scroll-margin */
-            .group\\/query,
-            div[id^="markdown-content"] h1,
-            div[id^="markdown-content"] h2 {
-                scroll-margin-top: 100px !important;
-            }
-            
-            /* Estilos para el botón toggle */
-            .perplexity-toc-toggle {
-                position: relative;
-                width: 24px;
-                height: 24px;
-                background: transparent;
-                border: none;
-                cursor: pointer;
-                padding: 4px;
-                border-radius: 4px;
-                transition: background-color 0.2s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-            }
-            
-            .perplexity-toc-toggle:hover {
-                background-color: rgba(0, 0, 0, 0.05);
-            }
-            
-            .perplexity-toc-toggle svg {
-                width: 14px;
-                height: 14px;
-                fill: #666;
-            }
-            
-            /* Estado colapsado del sidebar */
-            #perplexity-index-sidebar.collapsed {
-                width: auto !important;
-                background: transparent !important;
-                box-shadow: none !important;
-            }
-            
-            #perplexity-index-sidebar.collapsed .perplexity-toc-inner {
-                display: none;
-            }
-            
-            /* Botón flotante cuando está colapsado */
-            .perplexity-toc-floating-btn {
-                display: none;
-                position: fixed;
-                top: 80px;
-                right: 30px;
-                width: 48px;
-                height: 48px;
-                background-color: #ffffff;
-                border: 1px solid #e0e2e5;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                cursor: pointer;
-                z-index: 9999;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.2s;
-            }
-            
-            .perplexity-toc-floating-btn:hover {
-                transform: scale(1.05);
-                box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-            }
-            
-            .perplexity-toc-floating-btn svg {
-                width: 20px;
-                height: 20px;
-                fill: #21808d;
-            }
-            
-            #perplexity-index-sidebar.collapsed .perplexity-toc-floating-btn {
-                display: flex;
-            }
-            
-            /* Modo oscuro para botones */
-            @media (prefers-color-scheme: dark) {
-                .perplexity-toc-toggle:hover {
-                    background-color: rgba(255, 255, 255, 0.1);
-                }
-                
-                .perplexity-toc-toggle svg {
-                    fill: #999;
-                }
-                
-                .perplexity-toc-floating-btn {
-                    background-color: #191a1a;
-                    border-color: #444;
-                }
-                
-                .perplexity-toc-floating-btn svg {
-                    fill: #1d717c;
-                }
-            }
-            
             /* Debug: highlighting para elementos con IDs TOC */
-            ${DEBUG_MODE ? `
-            [id^="pp-toc-item-"] {
-                position: relative;
-            }
-            
             [id^="pp-toc-item-"]:before {
                 content: "TOC:" attr(id);
                 position: absolute;
@@ -301,7 +197,6 @@ function createSidebarShell() {
                 z-index: 1000;
                 opacity: 0.7;
             }
-            ` : ''}
         `;
         document.head.appendChild(styleSheet);
     }

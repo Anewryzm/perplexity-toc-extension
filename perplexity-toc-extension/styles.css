@@ -12,6 +12,90 @@ div[id^="markdown-content"] h2 {
     scroll-margin-top: 100px !important;
 }
 
+/* ===== BOTÓN TOGGLE ===== */
+.perplexity-toc-toggle {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.perplexity-toc-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.perplexity-toc-toggle svg {
+    width: 14px;
+    height: 14px;
+    fill: #666;
+}
+
+/* ===== ESTADO COLAPSADO DEL SIDEBAR ===== */
+#perplexity-index-sidebar.collapsed {
+    width: auto !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#perplexity-index-sidebar.collapsed .perplexity-toc-inner {
+    display: none;
+}
+
+/* ===== BOTÓN FLOTANTE ===== */
+.perplexity-toc-floating-btn {
+    display: none;
+    position: fixed;
+    top: 80px;
+    right: 30px;
+    width: 48px;
+    height: 48px;
+    background-color: #ffffff;
+    border: 1px solid #e0e2e5;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    cursor: pointer;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.perplexity-toc-floating-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.perplexity-toc-floating-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #21808d;
+}
+
+#perplexity-index-sidebar.collapsed .perplexity-toc-floating-btn {
+    display: flex;
+}
+
+/* ===== ESTILOS PARA ENLACES ROTOS (DEBUG) ===== */
+.toc-broken-link {
+    opacity: 0.5;
+}
+
+/* ===== ESTILOS DE DEBUG PARA TOC IDs ===== */
+[id^="pp-toc-item-"] {
+    position: relative;
+}
+
+/* Nota: Los estilos de debug se aplican dinámicamente desde JavaScript cuando DEBUG_MODE está activo */
+
 /* ===== SIDEBAR PRINCIPAL ===== */
 #perplexity-index-sidebar {
     position: fixed;
@@ -259,5 +343,23 @@ div[id^="markdown-content"] h2 {
     .toc-active-link:hover {
         background-color: #1d717c2a !important;
         color: #21808d !important
+    }
+    
+    /* Botones en modo oscuro */
+    .perplexity-toc-toggle:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .perplexity-toc-toggle svg {
+        fill: #999;
+    }
+    
+    .perplexity-toc-floating-btn {
+        background-color: #191a1a;
+        border-color: #444;
+    }
+    
+    .perplexity-toc-floating-btn svg {
+        fill: #1d717c;
     }
 }
