@@ -11,6 +11,7 @@ let isClickNavigating = false;
 let clickNavTimer;
 let sidebarListElement = null;
 let contentObserver = null;
+let isSidebarCollapsed = false; // Nueva variable para estado del sidebar
 
 // Configuración de debug
 const DEBUG_MODE = false; // Cambiar a false en producción
@@ -189,6 +190,99 @@ function createSidebarShell() {
                 scroll-margin-top: 100px !important;
             }
             
+            /* Estilos para el botón toggle */
+            .perplexity-toc-toggle {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                width: 24px;
+                height: 24px;
+                background: transparent;
+                border: none;
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 4px;
+                transition: background-color 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .perplexity-toc-toggle:hover {
+                background-color: rgba(0, 0, 0, 0.05);
+            }
+            
+            .perplexity-toc-toggle svg {
+                width: 16px;
+                height: 16px;
+                fill: #666;
+            }
+            
+            /* Estado colapsado del sidebar */
+            #perplexity-index-sidebar.collapsed {
+                width: auto !important;
+                background: transparent !important;
+                box-shadow: none !important;
+            }
+            
+            #perplexity-index-sidebar.collapsed .perplexity-toc-inner {
+                display: none;
+            }
+            
+            /* Botón flotante cuando está colapsado */
+            .perplexity-toc-floating-btn {
+                display: none;
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                width: 48px;
+                height: 48px;
+                background-color: #ffffff;
+                border: 1px solid #e0e2e5;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                cursor: pointer;
+                z-index: 9999;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+            
+            .perplexity-toc-floating-btn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            }
+            
+            .perplexity-toc-floating-btn svg {
+                width: 24px;
+                height: 24px;
+                fill: #21808d;
+            }
+            
+            #perplexity-index-sidebar.collapsed .perplexity-toc-floating-btn {
+                display: flex;
+            }
+            
+            /* Modo oscuro para botones */
+            @media (prefers-color-scheme: dark) {
+                .perplexity-toc-toggle:hover {
+                    background-color: rgba(255, 255, 255, 0.1);
+                }
+                
+                .perplexity-toc-toggle svg {
+                    fill: #999;
+                }
+                
+                .perplexity-toc-floating-btn {
+                    background-color: #191a1a;
+                    border-color: #444;
+                }
+                
+                .perplexity-toc-floating-btn svg {
+                    fill: #1d717c;
+                }
+            }
+            
             /* Debug: highlighting para elementos con IDs TOC */
             ${DEBUG_MODE ? `
             [id^="pp-toc-item-"] {
@@ -216,12 +310,48 @@ function createSidebarShell() {
     const sidebar = document.createElement('aside');
     sidebar.id = 'perplexity-index-sidebar';
     
+    // Crear botón flotante (inicialmente oculto)
+    const floatingBtn = document.createElement('button');
+    floatingBtn.className = 'perplexity-toc-floating-btn';
+    floatingBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    `;
+    floatingBtn.title = 'Mostrar índice';
+    floatingBtn.addEventListener('click', toggleSidebar);
+    
     const sidebarInner = document.createElement('div');
     sidebarInner.className = 'perplexity-toc-inner';
+    
+    // Header con título y botón toggle
+    const sidebarHeader = document.createElement('div');
+    sidebarHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;';
     
     const sidebarTitle = document.createElement('h3');
     sidebarTitle.className = 'perplexity-toc-title';
     sidebarTitle.textContent = 'Índice del Hilo';
+    sidebarTitle.style.marginBottom = '0';
+    sidebarTitle.style.paddingBottom = '0';
+    sidebarTitle.style.borderBottom = 'none';
+    
+    // Botón toggle
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'perplexity-toc-toggle';
+    toggleBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    `;
+    toggleBtn.title = 'Ocultar índice';
+    toggleBtn.addEventListener('click', toggleSidebar);
+    
+    // Separador
+    const separator = document.createElement('div');
+    separator.style.cssText = 'border-bottom: 1px solid #d0d2d5; margin-bottom: 15px;';
+    
+    sidebarHeader.appendChild(sidebarTitle);
+    sidebarHeader.appendChild(toggleBtn);
     
     sidebarListElement = document.createElement('ul');
     sidebarListElement.className = 'perplexity-toc-list';
@@ -279,10 +409,45 @@ function createSidebarShell() {
         }
     });
 
-    sidebarInner.appendChild(sidebarTitle);
+    sidebarInner.appendChild(sidebarHeader);
+    sidebarInner.appendChild(separator);
     sidebarInner.appendChild(sidebarListElement);
     sidebar.appendChild(sidebarInner);
+    sidebar.appendChild(floatingBtn);
     document.body.appendChild(sidebar);
+    
+    // Restaurar estado colapsado si estaba guardado
+    const savedState = localStorage.getItem('perplexity-toc-collapsed');
+    if (savedState === 'true') {
+        sidebar.classList.add('collapsed');
+        isSidebarCollapsed = true;
+    }
+}
+
+/**
+ * Función para alternar el estado del sidebar
+ */
+function toggleSidebar() {
+    const sidebar = document.getElementById('perplexity-index-sidebar');
+    if (!sidebar) return;
+    
+    isSidebarCollapsed = !isSidebarCollapsed;
+    
+    if (isSidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        localStorage.setItem('perplexity-toc-collapsed', 'true');
+        
+        if (DEBUG_MODE) {
+            console.log('📌 Sidebar collapsed');
+        }
+    } else {
+        sidebar.classList.remove('collapsed');
+        localStorage.setItem('perplexity-toc-collapsed', 'false');
+        
+        if (DEBUG_MODE) {
+            console.log('📌 Sidebar expanded');
+        }
+    }
 }
 
 /**
