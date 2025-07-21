@@ -159,8 +159,8 @@ function findElementByText(searchText) {
         let elementText = element.textContent.trim();
         
         // Para prompts, truncar igual que en el TOC
-        if (element.matches('.group\\/query') && elementText.length > 16) {
-            elementText = elementText.substring(0, 16) + "...";
+        if (element.matches('.group\\/query') && elementText.length > 24) {
+            elementText = elementText.substring(0, 24) + "...";
         }
         
         if (elementText === searchText) {
@@ -437,8 +437,8 @@ function updateSidebarContent() {
         const type = isPrompt ? 'prompt' : (element.tagName === 'H2' ? 'response-subtitle' : 'response-title');
         let textContent = element.textContent.trim();
 
-        if (isPrompt && textContent.length > 16) {
-            textContent = textContent.substring(0, 16) + "...";
+        if (isPrompt && textContent.length > 24) {
+            textContent = textContent.substring(0, 24) + "...";
         }
 
         // Validar que tenemos contenido para mostrar
