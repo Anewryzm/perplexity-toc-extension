@@ -224,7 +224,7 @@ function createSidebarShell() {
     
     const sidebarTitle = document.createElement('h3');
     sidebarTitle.className = 'perplexity-toc-title';
-    sidebarTitle.textContent = 'Índice del Hilo';
+    sidebarTitle.textContent = 'Table of Contents';
     sidebarTitle.style.marginBottom = '0';
     sidebarTitle.style.paddingBottom = '0';
     sidebarTitle.style.borderBottom = 'none';
